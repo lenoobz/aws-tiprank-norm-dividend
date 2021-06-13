@@ -9,37 +9,37 @@ import (
 
 // Service sector
 type Service struct {
-	dividendRepo           Repo
-	tiprankDividendService tiprankdividends.Service
-	log                    logger.ContextLog
+	dividendRepo   Repo
+	tiprankService tiprankdividends.Service
+	log            logger.ContextLog
 }
 
 // NewService create new service
-func NewService(dividendRepo Repo, distributionService tiprankdividends.Service, log logger.ContextLog) *Service {
+func NewService(dividendRepo Repo, tiprankService tiprankdividends.Service, log logger.ContextLog) *Service {
 	return &Service{
-		dividendRepo:           dividendRepo,
-		tiprankDividendService: distributionService,
-		log:                    log,
+		dividendRepo:   dividendRepo,
+		tiprankService: tiprankService,
+		log:            log,
 	}
 }
 
-// PopulateFundDividends populates fund dividends
-func (s *Service) PopulateFundDividends(ctx context.Context) error {
-	s.log.Info(ctx, "populate fund dividends")
+// InsertAssetDividends adds new dividend
+func (s *Service) InsertAssetDividends(ctx context.Context, tickers []string) error {
+	s.log.Info(ctx, "add new asset dividend")
 
-	// distributions, err := s.distributionService.FindTipRankDividends(ctx)
-	// if err != nil {
-	// 	s.log.Error(ctx, "find all fund distribution failed", "error", err)
-	// }
+	dividends, err := s.tiprankService.FindTipRankDividends(ctx, tickers)
+	if err != nil {
+		s.log.Error(ctx, "find all fund distribution failed", "error", err)
+	}
 
-	// for _, distribution := range distributions {
-	// 	dividend := distribution.MapFundDistributionToAssetDividend(ctx, s.log)
+	for _, dividend := range dividends {
+		dividend := dividend.MapTipRankDividendToAssetDividend(ctx, s.log)
 
-	// 	if err := s.dividendRepo.InsertAssetDividend(ctx, dividend); err != nil {
-	// 		s.log.Error(ctx, "insert asset dividend", "error", err)
-	// 		return err
-	// 	}
-	// }
+		if err := s.dividendRepo.InsertAssetDividend(ctx, dividend); err != nil {
+			s.log.Error(ctx, "insert asset dividend", "error", err)
+			return err
+		}
+	}
 
 	return nil
 }

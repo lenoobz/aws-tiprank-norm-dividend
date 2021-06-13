@@ -1,7 +1,10 @@
 package entities
 
 import (
+	"context"
 	"time"
+
+	logger "github.com/hthl85/aws-lambda-logger"
 )
 
 // TipRankDividend struct
@@ -18,4 +21,25 @@ type DividendModel struct {
 	ExDividendDate *time.Time `json:"exDividendDate,omitempty"`
 	RecordDate     *time.Time `json:"recordDate,omitempty"`
 	DividendDate   *time.Time `json:"payoutDate,omitempty"`
+}
+
+// MapTipRankDividendToAssetDividend map TipRank dividend to asset dividend
+func (f *TipRankDividend) MapTipRankDividendToAssetDividend(ctx context.Context, log logger.ContextLog) *AssetDividend {
+	assetDividend := &AssetDividend{
+		Ticker:    f.Ticker,
+		Dividends: make(map[int64]*DividendDetails),
+	}
+
+	for key, val := range f.DividendHistory {
+		dividendDetails := &DividendDetails{
+			Amount:         val.Dividend,
+			ExDividendDate: val.ExDividendDate,
+			RecordDate:     val.RecordDate,
+			PayableDate:    val.DividendDate,
+		}
+
+		assetDividend.Dividends[key] = dividendDetails
+	}
+
+	return assetDividend
 }

@@ -5,11 +5,10 @@ import (
 	"log"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/google/uuid"
-	corid "github.com/hthl85/aws-lambda-corid"
 	logger "github.com/hthl85/aws-lambda-logger"
 	"github.com/hthl85/aws-tiprank-norm-dividend/config"
 	"github.com/hthl85/aws-tiprank-norm-dividend/infrastructure/repositories/mongodb/repos"
+	"github.com/hthl85/aws-tiprank-norm-dividend/usecase/dividends"
 	tiprankdividends "github.com/hthl85/aws-tiprank-norm-dividend/usecase/tiprank-dividends"
 )
 
@@ -40,12 +39,19 @@ func lambdaHandler(ctx context.Context, req TipRankDividendRequest) {
 	}
 	defer repo.Close()
 
+	// create new repository
+	dividendRepo, err := repos.NewDividendMongo(nil, zap, &appConf.Mongo)
+	if err != nil {
+		log.Fatal("create dividend mongo repo failed")
+	}
+	defer dividendRepo.Close()
+
 	// create new service
 	tiprankService := tiprankdividends.NewService(repo, zap)
+	dividendService := dividends.NewService(dividendRepo, *tiprankService, zap)
 
 	// try correlation context
-	id, _ := uuid.NewRandom()
-	coridCtx := corid.NewContext(ctx, id)
-	dividends, err := tiprankService.FindTipRankDividends(coridCtx, req.Tickers)
-	zap.Info(coridCtx, "TipRank Dividends", "dividends", dividends)
+	if err := dividendService.InsertAssetDividends(ctx, req.Tickers); err != nil {
+		log.Fatal("insert asset dividends failed")
+	}
 }
