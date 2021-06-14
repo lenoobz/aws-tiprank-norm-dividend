@@ -9,7 +9,7 @@ import (
 	"github.com/hthl85/aws-tiprank-norm-dividend/config"
 	"github.com/hthl85/aws-tiprank-norm-dividend/infrastructure/repositories/mongodb/repos"
 	"github.com/hthl85/aws-tiprank-norm-dividend/usecase/dividends"
-	tiprankdividends "github.com/hthl85/aws-tiprank-norm-dividend/usecase/tiprank-dividends"
+	"github.com/hthl85/aws-tiprank-norm-dividend/usecase/tiprank-assets"
 )
 
 type TipRankDividendRequest struct {
@@ -33,21 +33,21 @@ func lambdaHandler(ctx context.Context, req TipRankDividendRequest) {
 	defer zap.Close()
 
 	// create new repository
-	repo, err := repos.NewTipRankDividendMongo(nil, zap, &appConf.Mongo)
+	tiprankRepo, err := repos.NewTipRankAssetMongo(nil, zap, &appConf.Mongo)
 	if err != nil {
-		log.Fatalf("create TipRank dividend mongo repo failed: %v\n", err)
+		log.Fatalf("create TipRank asset mongo failed: %v\n", err)
 	}
-	defer repo.Close()
+	defer tiprankRepo.Close()
 
 	// create new repository
 	dividendRepo, err := repos.NewDividendMongo(nil, zap, &appConf.Mongo)
 	if err != nil {
-		log.Fatal("create dividend mongo repo failed")
+		log.Fatal("create dividend mongo failed")
 	}
 	defer dividendRepo.Close()
 
 	// create new service
-	tiprankService := tiprankdividends.NewService(repo, zap)
+	tiprankService := tiprank.NewService(tiprankRepo, zap)
 	dividendService := dividends.NewService(dividendRepo, *tiprankService, zap)
 
 	// try correlation context

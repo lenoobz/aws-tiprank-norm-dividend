@@ -1,4 +1,4 @@
-package tiprankdividends
+package tiprank
 
 import (
 	"context"
@@ -21,8 +21,8 @@ func NewService(repo Repo, log logger.ContextLog) *Service {
 	}
 }
 
-// FindTipRankDividends finds all tip rank dividends
-func (s *Service) FindTipRankDividends(ctx context.Context, tickers []string) ([]*entities.TipRankDividend, error) {
-	s.log.Info(ctx, "find all tip rank dividends")
-	return s.repo.FindTipRankDividends(ctx, tickers)
+// FindTipRankAssets finds all tip rank assets
+func (s *Service) FindTipRankAssets(ctx context.Context, tickers []string) ([]*entities.TipRankAsset, error) {
+	s.log.Info(ctx, "find all TipRank assets")
+	return s.repo.FindTipRankAssets(ctx, tickers)
 }

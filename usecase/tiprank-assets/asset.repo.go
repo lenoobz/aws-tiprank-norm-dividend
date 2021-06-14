@@ -1,4 +1,4 @@
-package tiprankdividends
+package tiprank
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 // Reader interface
 type Reader interface {
-	FindTipRankDividends(context.Context, []string) ([]*entities.TipRankDividend, error)
+	FindTipRankAssets(context.Context, []string) ([]*entities.TipRankAsset, error)
 }
 
 // Writer interface

@@ -91,7 +91,7 @@ func (r *DividendMongo) Close() {
 // Implement interface
 ///////////////////////////////////////////////////////////////////////////////
 
-// InsertAssetDividend finds fund dividend
+// InsertAssetDividend adds new asset dividend
 func (r *DividendMongo) InsertAssetDividend(ctx context.Context, dividend *entities.AssetDividend) error {
 	// create new context for the query
 	ctx, cancel := createContext(ctx, r.conf.TimeoutMS)
