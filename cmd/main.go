@@ -9,7 +9,8 @@ import (
 	logger "github.com/hthl85/aws-lambda-logger"
 	"github.com/hthl85/aws-tiprank-norm-dividend/config"
 	"github.com/hthl85/aws-tiprank-norm-dividend/infrastructure/repositories/mongodb/repos"
-	"github.com/hthl85/aws-tiprank-norm-dividend/usecase/tiprank-assets"
+	assets "github.com/hthl85/aws-tiprank-norm-dividend/usecase/asset-dividends"
+	"github.com/hthl85/aws-tiprank-norm-dividend/usecase/tiprank-dividends"
 )
 
 func main() {
@@ -29,12 +30,28 @@ func main() {
 	}
 	defer tiprankRepo.Close()
 
+	// create new repository
+	dividendRepo, err := repos.NewAssetDividendMongo(nil, zap, &appConf.Mongo)
+	if err != nil {
+		log.Fatal("create dividend mongo failed")
+	}
+	defer dividendRepo.Close()
+
 	// create new service
 	tiprankService := tiprank.NewService(tiprankRepo, zap)
+	dividendService := assets.NewService(dividendRepo, *tiprankService, zap)
 
 	// try correlation context
 	id, _ := uuid.NewRandom()
 	ctx := corid.NewContext(context.Background(), id)
-	dividends, err := tiprankService.FindTipRankAssets(ctx, []string{"TSE:LGT.A", "TSE:LGT.B"})
-	zap.Info(ctx, "TipRank Dividends", "dividends", dividends)
+
+	// try correlation context
+	if err := dividendService.AddAssetDividends(ctx); err != nil {
+		log.Fatal("add asset dividends failed")
+	}
+
+	// try correlation context
+	// if err := dividendService.InsertAssetDividendsByTickers(ctx, []string{"TSE:FAP"}); err != nil {
+	// 	log.Fatal("add asset dividends by tickers failed")
+	// }
 }

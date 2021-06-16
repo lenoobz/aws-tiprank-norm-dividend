@@ -9,23 +9,24 @@ import (
 	"github.com/hthl85/aws-tiprank-norm-dividend/config"
 	"github.com/hthl85/aws-tiprank-norm-dividend/consts"
 	"github.com/hthl85/aws-tiprank-norm-dividend/entities"
+	"github.com/hthl85/aws-tiprank-norm-dividend/infrastructure/repositories/mongodb/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// TipRankAssetMongo struct
-type TipRankAssetMongo struct {
+// AssetDividendMongo struct
+type AssetDividendMongo struct {
 	db     *mongo.Database
 	client *mongo.Client
 	log    logger.ContextLog
 	conf   *config.MongoConfig
 }
 
-// NewTipRankAssetMongo creates new TipRank asset mongo repo
-func NewTipRankAssetMongo(db *mongo.Database, log logger.ContextLog, conf *config.MongoConfig) (*TipRankAssetMongo, error) {
+// NewAssetDividendMongo creates new dividend mongo repo
+func NewAssetDividendMongo(db *mongo.Database, log logger.ContextLog, conf *config.MongoConfig) (*AssetDividendMongo, error) {
 	if db != nil {
-		return &TipRankAssetMongo{
+		return &AssetDividendMongo{
 			db:   db,
 			log:  log,
 			conf: conf,
@@ -64,7 +65,7 @@ func NewTipRankAssetMongo(db *mongo.Database, log logger.ContextLog, conf *confi
 		return nil, err
 	}
 
-	return &TipRankAssetMongo{
+	return &AssetDividendMongo{
 		db:     client.Database(conf.Dbname),
 		client: client,
 		log:    log,
@@ -73,7 +74,7 @@ func NewTipRankAssetMongo(db *mongo.Database, log logger.ContextLog, conf *confi
 }
 
 // Close disconnect from database
-func (r *TipRankAssetMongo) Close() {
+func (r *AssetDividendMongo) Close() {
 	ctx := context.Background()
 	r.log.Info(ctx, "close mongo client")
 
@@ -90,79 +91,51 @@ func (r *TipRankAssetMongo) Close() {
 // Implement interface
 ///////////////////////////////////////////////////////////////////////////////
 
-// FindTipRankAssets finds TipRank assets
-func (r *TipRankAssetMongo) FindTipRankAssets(ctx context.Context, tickers []string) ([]*entities.TipRankAsset, error) {
-	if len(tickers) < 1 {
-		return nil, nil
-	}
-
-	uppercaseTickers, err := stringsToUpperCase(tickers)
-	if err != nil {
-		r.log.Error(ctx, "strings to upper case failed", "error", err)
-		return nil, err
-	}
-
+// InsertAssetDividend adds new asset dividend
+func (r *AssetDividendMongo) InsertAssetDividend(ctx context.Context, dividend *entities.AssetDividend) error {
 	// create new context for the query
 	ctx, cancel := createContext(ctx, r.conf.TimeoutMS)
 	defer cancel()
 
+	assetDividendModel, err := models.NewAssetDividendModel(ctx, r.log, dividend, r.conf.SchemaVersion)
+	if err != nil {
+		r.log.Error(ctx, "create model failed", "error", err)
+		return err
+	}
+
 	// what collection we are going to use
-	colname, ok := r.conf.Colnames[consts.TIPRANK_DIVIDEND_LIST_COLLECTION]
+	colname, ok := r.conf.Colnames[consts.ASSET_DIVIDENDS_COLLECTION]
 	if !ok {
 		r.log.Error(ctx, "cannot find collection name")
-		return nil, fmt.Errorf("cannot find collection name")
 	}
 	col := r.db.Collection(colname)
 
-	// filter
-	filter := bson.D{
+	filter := bson.D{{
+		Key:   "ticker",
+		Value: assetDividendModel.Ticker,
+	}}
+
+	update := bson.D{
 		{
-			Key: "ticker",
+			Key:   "$set",
+			Value: assetDividendModel,
+		},
+		{
+			Key: "$setOnInsert",
 			Value: bson.D{{
-				Key:   "$in",
-				Value: uppercaseTickers,
+				Key:   "createdAt",
+				Value: time.Now().UTC().Unix(),
 			}},
 		},
 	}
 
-	// find options
-	findOptions := options.Find()
+	opts := options.Update().SetUpsert(true)
 
-	cur, err := col.Find(ctx, filter, findOptions)
-
-	// only run defer function when find success
-	if cur != nil {
-		defer func() {
-			if deferErr := cur.Close(ctx); deferErr != nil {
-				err = deferErr
-			}
-		}()
-	}
-
-	// find was not succeed
+	_, err = col.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		r.log.Error(ctx, "find query failed", "error", err)
-		return nil, err
+		r.log.Error(ctx, "update one failed", "error", err)
+		return err
 	}
 
-	var tiprankAssets []*entities.TipRankAsset
-
-	// iterate over the cursor to decode document one at a time
-	for cur.Next(ctx) {
-		// decode cursor to activity model
-		var tiprankAsset entities.TipRankAsset
-		if err = cur.Decode(&tiprankAsset); err != nil {
-			r.log.Error(ctx, "decode failed", "error", err)
-			return nil, err
-		}
-
-		tiprankAssets = append(tiprankAssets, &tiprankAsset)
-	}
-
-	if err := cur.Err(); err != nil {
-		r.log.Error(ctx, "iterate over cursor failed", "error", err)
-		return nil, err
-	}
-
-	return tiprankAssets, nil
+	return nil
 }

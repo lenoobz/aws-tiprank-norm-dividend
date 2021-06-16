@@ -8,26 +8,25 @@ import (
 	"github.com/hthl85/aws-tiprank-norm-dividend/utils/ticker"
 )
 
-// TipRankAsset struct
-type TipRankAsset struct {
+// TipRankDividend struct
+type TipRankDividend struct {
 	Ticker          string                     `json:"ticker,omitempty"`
 	Name            string                     `json:"name,omitempty"`
 	Yield           float64                    `json:"yield,omitempty"`
-	Amount          float64                    `json:"amount,omitempty"`
 	Currency        string                     `json:"currency,omitempty"`
-	DividendHistory map[int64]*TipRankDividend `json:"dividendHistory,omitempty"`
+	DividendHistory map[int64]*DividendHistory `json:"dividendHistory,omitempty"`
 }
 
-// TipRankDividend struct
-type TipRankDividend struct {
+// DividendHistory struct
+type DividendHistory struct {
 	Dividend       float64    `json:"dividend,omitempty"`
 	ExDividendDate *time.Time `json:"exDividendDate,omitempty"`
 	RecordDate     *time.Time `json:"recordDate,omitempty"`
-	DividendDate   *time.Time `json:"payoutDate,omitempty"`
+	PayoutDate     *time.Time `json:"payoutDate,omitempty"`
 }
 
 // MapTipRankDividendToAssetDividend map TipRank dividend to asset dividend
-func (f *TipRankAsset) MapTipRankDividendToAssetDividend(ctx context.Context, log logger.ContextLog) *AssetDividend {
+func (f *TipRankDividend) MapTipRankDividendToAssetDividend(ctx context.Context, log logger.ContextLog) *AssetDividend {
 	assetDividend := &AssetDividend{
 		Ticker:    ticker.GenYahooTickerFromTipRankTicker(f.Ticker),
 		Dividends: make(map[int64]*DividendDetails),
@@ -38,7 +37,7 @@ func (f *TipRankAsset) MapTipRankDividendToAssetDividend(ctx context.Context, lo
 			Amount:         val.Dividend,
 			ExDividendDate: val.ExDividendDate,
 			RecordDate:     val.RecordDate,
-			PayableDate:    val.DividendDate,
+			PayableDate:    val.PayoutDate,
 		}
 
 		assetDividend.Dividends[key] = dividendDetails
