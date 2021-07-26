@@ -5,12 +5,12 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	corid "github.com/hthl85/aws-lambda-corid"
-	logger "github.com/hthl85/aws-lambda-logger"
-	"github.com/hthl85/aws-tiprank-norm-dividend/config"
-	"github.com/hthl85/aws-tiprank-norm-dividend/infrastructure/repositories/mongodb/repos"
-	assets "github.com/hthl85/aws-tiprank-norm-dividend/usecase/asset-dividends"
-	"github.com/hthl85/aws-tiprank-norm-dividend/usecase/tiprank-dividends"
+	corid "github.com/lenoobz/aws-lambda-corid"
+	logger "github.com/lenoobz/aws-lambda-logger"
+	"github.com/lenoobz/aws-tiprank-norm-dividend/config"
+	"github.com/lenoobz/aws-tiprank-norm-dividend/infrastructure/repositories/mongodb/repos"
+	assets "github.com/lenoobz/aws-tiprank-norm-dividend/usecase/asset-dividends"
+	"github.com/lenoobz/aws-tiprank-norm-dividend/usecase/tiprank-dividends"
 )
 
 func main() {

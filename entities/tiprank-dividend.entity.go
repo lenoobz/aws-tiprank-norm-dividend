@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	logger "github.com/hthl85/aws-lambda-logger"
-	"github.com/hthl85/aws-tiprank-norm-dividend/utils/ticker"
+	logger "github.com/lenoobz/aws-lambda-logger"
+	"github.com/lenoobz/aws-tiprank-norm-dividend/utils/ticker"
 )
 
 // TipRankDividend struct

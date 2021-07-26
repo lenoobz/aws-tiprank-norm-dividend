@@ -3,7 +3,7 @@ package assets
 import (
 	"context"
 
-	"github.com/hthl85/aws-tiprank-norm-dividend/entities"
+	"github.com/lenoobz/aws-tiprank-norm-dividend/entities"
 )
 
 // Reader interface
