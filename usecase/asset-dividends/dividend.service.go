@@ -36,7 +36,7 @@ func (s *Service) AddAssetDividendsByTickers(ctx context.Context, tickers []stri
 		dividend := asset.MapTipRankDividendToAssetDividend(ctx, s.log)
 
 		if err := s.dividendRepo.InsertAssetDividend(ctx, dividend); err != nil {
-			s.log.Error(ctx, "insert asset dividend", "error", err)
+			s.log.Error(ctx, "insert asset dividend failed", "error", err)
 			return err
 		}
 	}
